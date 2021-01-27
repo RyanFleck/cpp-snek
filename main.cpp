@@ -1,6 +1,7 @@
 #include <iostream>
 #include <cstdlib>
 #include <ctime>
+#include <vector>
 #include "./json.hpp"
 #include "./http.h"
 
@@ -12,6 +13,40 @@ using namespace nlohmann;
  *  A BattleSnake by Ryan Fleck
  *  https://github.com/RyanFleck
  *       dev@ryanfleck.ca
+ */
+
+
+void print_board(int** arr, int height, int width){
+  // Prints arr[height][width]
+  cout << "\nT:\tGame Board:" << endl;
+  for(int y=height-1; y>=0; y--){
+    cout << y << ":\t";
+    for(int x=0; x<width; x++){
+      cout << arr[y][x] << " ";
+    }
+    cout << endl;
+  }
+
+  cout << endl;
+  cout << "x:\t";
+  for(int x=0; x<width; x++){
+    cout << x << " ";
+  }
+  cout << endl;
+}
+
+void initialize(int** arr, int height, int width){
+  for(int y=height-1; y>=0; y--){
+    for(int x=0; x<width; x++){
+      arr[y][x] = 0; 
+    }
+  }
+}
+
+
+
+/**
+ * main
  */
 
 int main(void) {
@@ -51,7 +86,9 @@ int main(void) {
   svr.Post("/move", [](auto &req, auto &res){
     // https://github.com/nlohmann/json
     json data = json::parse(req.body);
-    cout << "\n\n" << data << endl;
+    cout << "\n\nPerforming Move Operation. Turn " << data["turn"] << "." << endl;
+    cout << "ID: " << data["game"]["id"] << endl;
+    cout << "\n" << data << endl;
     json board = data["board"];
     json snakes = board["snakes"];
     json you = data["you"];
@@ -60,9 +97,26 @@ int main(void) {
     int width = board["width"];
     int height = board["height"];
 
+    int** frame = new int*[height];
+    for(int i=0; i<height; i++)
+      frame[i] = new int[width];
+
+    // Set bottom-right and top-left corners.
+    initialize(frame, height, width);
+    frame[0][0] = 1;
+    frame[height-1][width-1] = 2;
+
+    print_board(frame, height, width);
+    
+
 
     string moves[4] = {"up", "down", "left", "right"};
-    string move = "right";
+
+    // Temporarily set a random move. 
+    int index = rand() % 4;
+    string move = moves[index];
+
+    // Finally, reply with move: 
     res.set_content("{\"move\": \"" + move + "\"}", "text/plain");
   });
 
