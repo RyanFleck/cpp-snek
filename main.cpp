@@ -1,6 +1,9 @@
 #include <iostream>
+#include "./json.hpp"
 #include "./http.h"
+
 using namespace std;
+using namespace nlohmann; // For JSON lib.
 
 httplib::Server svr;
 
@@ -33,7 +36,7 @@ int main(void) {
 
   svr.Post("/move", [](auto &req, auto &res){
     //get json data
-    string data = req.body;
+    json data = json::parse(req.body);
     cout << "\n\n" + data;
     string moves[4] = {"up", "down", "left", "right"};
     string move = "right";
