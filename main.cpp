@@ -43,6 +43,14 @@ void initialize(int** arr, int height, int width){
   }
 }
 
+void delete_frame(int** arr, int height, int width){
+  for(int y=height-1; y>=0; y--){
+    delete[] arr[y];
+  }
+  delete[] arr;
+}
+
+
 
 
 /**
@@ -106,6 +114,7 @@ int main(void) {
     frame[0][0] = 1;
     frame[height-1][width-1] = 2;
 
+    cout << "\nBoard at start of computation:" << endl;
     print_board(frame, height, width);
     
 
@@ -115,6 +124,12 @@ int main(void) {
     // Temporarily set a random move. 
     int index = rand() % 4;
     string move = moves[index];
+
+    // Print board and chosen move. 
+    cout << "\nBoard at end of computation:" << endl;
+    print_board(frame, height, width);
+    delete_frame(frame, height, width);
+    cout << "Moving " << move << endl;
 
     // Finally, reply with move: 
     res.set_content("{\"move\": \"" + move + "\"}", "text/plain");
