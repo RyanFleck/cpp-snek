@@ -162,7 +162,8 @@ void addSnakes(int** arr, int h, int w, const json& snakes, const json& you){
       const int sy = (int) segment["y"];
       if(debug) cout << "Segment is at: " << sx << "," << sy << endl;
       change_cell(arr, h, w, sx, sy, -50);
-      if(!me) change_block(arr, h, w, sx, sy, -10);
+      if(!me) change_block(arr, h, w, sx, sy, -5);
+      if(!me) change_block_radius(arr, h, w, sx, sy, -5, 2);
       if(me) change_block(arr, h, w, sx, sy, -5);
     }
     if(debug) cout << endl;
