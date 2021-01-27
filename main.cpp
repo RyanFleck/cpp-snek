@@ -22,7 +22,7 @@ void print_board(int** arr, int height, int width){
   for(int y=height-1; y>=0; y--){
     cout << y << ":\t";
     for(int x=0; x<width; x++){
-      cout << arr[y][x] << " ";
+      cout << arr[y][x] << "\t";
     }
     cout << endl;
   }
@@ -30,7 +30,7 @@ void print_board(int** arr, int height, int width){
   cout << endl;
   cout << "x:\t";
   for(int x=0; x<width; x++){
-    cout << x << " ";
+    cout << x << "\t";
   }
   cout << endl;
 }
@@ -50,7 +50,27 @@ void delete_frame(int** arr, int height, int width){
   delete[] arr;
 }
 
+void change_block(int** arr, int height, int width, int ix, int iy, int delta){
+  for(int y=iy-1; y <= iy + 1; y++){
+    for(int x=ix-1; x <= ix+1; x++){
+      if(x >= 0 && x <= width -1){
+        if(y >= 0 && y <= height -1){
+          cout << "Writing "<<delta<<" to "<<x<<","<<y<<"."<<endl;
+          arr[y][x] += delta;
+        }
+      }
+    }
+  }
+}
 
+void change_cell(int** arr, int height, int width, int ix, int iy, int delta){
+    if(ix >= 0 && ix <= width -1){
+      if(iy >= 0 && iy <= height -1){
+          cout << "Writing "<<delta<<" to "<<ix<<","<<iy<<"."<<endl;
+      arr[iy][ix] += delta;
+    }
+  }
+}
 
 
 /**
@@ -111,10 +131,10 @@ int main(void) {
 
     // Set bottom-right and top-left corners.
     initialize(frame, height, width);
-    frame[0][0] = 1;
-    frame[height-1][width-1] = 2;
+    change_block(frame, height, width, 0, 0, -1);
+    change_cell(frame, height, width, 0, 0, -1);
 
-    cout << "\nBoard at start of computation:" << endl;
+    cout << "\n\nBoard at start of computation:" << endl;
     print_board(frame, height, width);
     
 
@@ -126,10 +146,10 @@ int main(void) {
     string move = moves[index];
 
     // Print board and chosen move. 
-    cout << "\nBoard at end of computation:" << endl;
+    cout << "\n\nBoard at end of computation:" << endl;
     print_board(frame, height, width);
     delete_frame(frame, height, width);
-    cout << "Moving " << move << endl;
+    cout << "\nComputation result: Moving " << move << "." << endl;
 
     // Finally, reply with move: 
     res.set_content("{\"move\": \"" + move + "\"}", "text/plain");
