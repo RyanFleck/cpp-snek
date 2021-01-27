@@ -1,14 +1,28 @@
 #include <iostream>
+#include <cstdlib>
+#include <ctime>
 #include "./json.hpp"
 #include "./http.h"
 
 using namespace std;
-using namespace nlohmann; // For JSON lib.
+using namespace nlohmann;
 
-httplib::Server svr;
+/**
+ *          SOLID SNEK
+ *  A BattleSnake by Ryan Fleck
+ *  https://github.com/RyanFleck
+ *       dev@ryanfleck.ca
+ */
 
 int main(void) {
+  // Announce Awakening
   cout << "Guten Morgen!" << endl;
+
+  // Set Random Seed
+  srand((int)time(0));
+
+  // Define HTTP Server
+  httplib::Server svr;
 
   /**
    * Basic status, start, end endpoints.
@@ -35,15 +49,22 @@ int main(void) {
    */
 
   svr.Post("/move", [](auto &req, auto &res){
-    //get json data
+    // https://github.com/nlohmann/json
     json data = json::parse(req.body);
-    cout << "\n\n" + data;
+    cout << "\n\n" << data << endl;
+    json board = data["board"];
+    json snakes = board["snakes"];
+    json you = data["you"];
+
+    // Store Board Properties
+    int width = board["width"];
+    int height = board["height"];
+
+
     string moves[4] = {"up", "down", "left", "right"};
     string move = "right";
     res.set_content("{\"move\": \"" + move + "\"}", "text/plain");
   });
-
-
 
   svr.listen("0.0.0.0", 8080);
 }
