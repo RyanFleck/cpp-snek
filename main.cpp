@@ -15,24 +15,26 @@ using namespace nlohmann;
  *       dev@ryanfleck.ca
  */
 
+ const bool debug = 1;
+
 
 void print_board(int** arr, int height, int width){
   // Prints arr[height][width]
-  cout << "\nT:\tGame Board:" << endl;
+  if(debug)  cout << "\nT:\tGame Board:" << endl;
   for(int y=height-1; y>=0; y--){
-    cout << y << ":\t";
+    if(debug) cout << y << ":\t";
     for(int x=0; x<width; x++){
-      cout << arr[y][x] << "\t";
+      if(debug) cout << arr[y][x] << "\t";
     }
-    cout << endl;
+    if(debug) cout << endl;
   }
 
-  cout << endl;
-  cout << "x:\t";
+  if(debug) cout << endl;
+  if(debug) cout << "x:\t";
   for(int x=0; x<width; x++){
-    cout << x << "\t";
+    if(debug) cout << x << "\t";
   }
-  cout << endl;
+  if(debug) cout << endl;
 }
 
 
@@ -45,11 +47,40 @@ void delete_frame(int** arr, int height, int width){
 }
 
 void change_block(int** arr, int height, int width, int ix, int iy, int delta){
+  // Changes a 3x3 block of elements.
   for(int y=iy-1; y <= iy + 1; y++){
     for(int x=ix-1; x <= ix+1; x++){
       if(x >= 0 && x <= width -1){
         if(y >= 0 && y <= height -1){
           arr[y][x] += delta;
+        }
+      }
+    }
+  }
+}
+
+void change_block_radius(int** arr, int height, int width, int ix, int iy, int delta, int radius){
+  // Changes a 5x5 on edges block of elements.
+  for(int y=iy-radius; y <= iy + radius; y++){
+    for(int x=ix-radius; x <= ix+radius; x++){
+      if(x >= 0 && x <= width -1){
+        if(y >= 0 && y <= height -1){
+          arr[y][x] += delta;
+        }
+      }
+    }
+  }
+}
+
+void change_block_if_neutral(int** arr, int height, int width, int ix, int iy, int delta){
+  // Changes a 3x3 block of elements.
+  for(int y=iy-1; y <= iy + 1; y++){
+    for(int x=ix-1; x <= ix+1; x++){
+      if(x >= 0 && x <= width -1){
+        if(y >= 0 && y <= height -1){
+          if(arr[y][x] == 0){
+            arr[y][x] += delta;
+          }
         }
       }
     }
@@ -64,41 +95,100 @@ void change_cell(int** arr, int height, int width, int ix, int iy, int delta){
   }
 }
 
+int get_cell(int** arr, int height, int width, int ix, int iy){
+    if(ix >= 0 && ix <= width -1){
+      if(iy >= 0 && iy <= height -1){
+      return arr[iy][ix];
+    }
+  }
+  return -100;
+}
+
 /**
  * Initialize game board. Edges are -1.
  */
 void initialize(int** arr, int height, int width){
-
   // Set borders to -1 and other areas to 0.
   for(int y=height-1; y>=0; y--){
     for(int x=0; x<width; x++){
       if(y == 0 || x == 0 || x == width-1 || y == height-1){
-        arr[y][x] = -1; 
+        arr[y][x] = -5; 
       }else{
         arr[y][x] = 0; 
       }
     }
   }
-
   // Set corners to lower.
-
   // Bottom-left.
   change_block(arr, height, width, 0, 0, -1);
+  change_block_radius(arr, height, width, 0, 0, -1, 2);
   change_cell(arr, height, width, 0, 0, -1);
   
   // Bottom-right.
   change_block(arr, height, width, width-1, 0, -1);
+  change_block_radius(arr, height, width, width-1, 0, -1, 2);
   change_cell(arr, height, width, width-1, 0, -1);
   
   // top-left.
   change_block(arr, height, width, 0, height-1, -1);
+  change_block_radius(arr, height, width, 0, height-1, -1, 2);
   change_cell(arr, height, width, 0, height-1, -1);
   
   // top-right.
   change_block(arr, height, width, width-1, height-1, -1);
+  change_block_radius(arr, height, width, width-1, height-1, -1, 2);
   change_cell(arr, height, width, width-1, height-1, -1);
 }
 
+void addSnakes(int** arr, int h, int w, const json& snakes, const json& you){
+  // Adds Snakes to JSON.
+  if(debug) cout << "\nAdding snakes..." << endl;
+  auto id = you["id"];
+  for(const auto &snake : snakes){
+    const bool me = snake["id"] == id;
+    if(debug) cout << " - Adding snake " << snake["name"] << endl;
+    if(debug) cout << "Me: " << me << endl;
+    json body = snake["body"];
+    if(debug) cout << "Getting head..." << endl;
+    json head = snake["head"];
+    if(debug) cout << "Getting head position" << endl;
+    const int hx = (int) head["x"];
+    const int hy = (int) head["y"];
+    if(debug) cout << "Head is at: " << hx << "," << hy << endl;
+
+    // Decrement head.
+    change_cell(arr, h, w, hx, hy, -20);
+    if(!me) change_block(arr, h, w, hx, hy, -4);
+
+    // Decrement body parts.
+    for(const auto &segment : body){
+      if(debug) cout << "Adding segment..." << endl;
+      const int sx = (int) segment["x"];
+      const int sy = (int) segment["y"];
+      if(debug) cout << "Segment is at: " << sx << "," << sy << endl;
+      change_cell(arr, h, w, sx, sy, -10);
+      change_block(arr, h, w, sx, sy, -2);
+    }
+    if(debug) cout << endl;
+  }
+}
+
+void addFood(int** arr, int h, int w, const json& food){
+  if(debug) cout << "\nAdding food..." << endl;
+  for(const auto &apple : food){
+    const int sx = apple["x"]; 
+    const int sy = apple["y"]; 
+    change_cell(arr, h, w, sx, sy, 10);
+    change_block(arr, h, w, sx, sy, 5);
+    // Add food bonuses based on distance.
+    for(int i=2; i<w; i++)
+      change_block_radius(arr, h, w, sx, sy, 1, i);
+  }
+}
+
+void sortCompass(map<string, int> &compass){
+  
+}
 
 /**
  * main
@@ -106,7 +196,7 @@ void initialize(int** arr, int height, int width){
 
 int main(void) {
   // Announce Awakening
-  cout << "Guten Morgen!" << endl;
+  if(debug) cout << "Guten Morgen!" << endl;
 
   // Set Random Seed
   srand((int)time(0));
@@ -140,13 +230,14 @@ int main(void) {
 
   svr.Post("/move", [](auto &req, auto &res){
     // https://github.com/nlohmann/json
-    json data = json::parse(req.body);
-    cout << "\n\nPerforming Move Operation. Turn " << data["turn"] << "." << endl;
-    cout << "ID: " << data["game"]["id"] << endl;
-    cout << "\n" << data << endl;
-    json board = data["board"];
-    json snakes = board["snakes"];
-    json you = data["you"];
+    const json data = json::parse(req.body);
+    if(debug) cout << "\n\nPerforming Move Operation. Turn " << data["turn"] << "." << endl;
+    if(debug) cout << "ID: " << data["game"]["id"] << endl;
+    if(debug) cout << "\n" << data << endl;
+    const json board = data["board"];
+    const json snakes = board["snakes"];
+    const json food = board["food"];
+    const json you = data["you"];
 
     // Store Board Properties
     int width = board["width"];
@@ -159,22 +250,46 @@ int main(void) {
     // Set bottom-right and top-left corners.
     initialize(frame, height, width);
 
-    cout << "\n\nBoard at start of computation:" << endl;
+    // Add Snakes
+    addSnakes(frame, height, width, snakes, you);
+
+    // Add Food
+    addFood(frame, height, width, food);
+
+    if(debug) cout << "\n\nBoard at start of computation:" << endl;
     print_board(frame, height, width);
     
+    // Pick the best move.
 
+    // My head position
+    const int hx = (int) you["head"]["x"];
+    const int hy = (int) you["head"]["y"];
+    if(debug) cout << "My head is at "<< hx << "," << hy << ".";
 
-    string moves[4] = {"up", "down", "left", "right"};
+    map<int, string> compass = {
+      {get_cell(frame, height, width, hx, hy+1), "up"},
+      {get_cell(frame, height, width, hx, hy-1), "down"},
+      {get_cell(frame, height, width, hx-1, hy), "left"},
+      {get_cell(frame, height, width, hx+1, hy), "right"},
+    };
+
+    std::map<int, string>::iterator best
+        = std::max_element(compass.begin(),compass.end(),[] (const std::pair<int, string>& a, const std::pair<int, string>& b)->bool{ return a.first < b.first; } );
+
+    // Take the first entry in the sorted map.
+    string move = (string) best->second;
+
+    // string moves[4] = {"up", "down", "left", "right"};
 
     // Temporarily set a random move. 
-    int index = rand() % 4;
-    string move = moves[index];
+    // int index = rand() % 4;
+    // string move = moves[index];
 
     // Print board and chosen move. 
-    cout << "\n\nBoard at end of computation:" << endl;
+    if(debug) cout << "\n\nBoard at end of computation:" << endl;
     print_board(frame, height, width);
     delete_frame(frame, height, width);
-    cout << "\nComputation result: Moving " << move << "." << endl;
+    if(debug) cout << "\nComputation result: Moving " << move << "." << endl;
 
     // Finally, reply with move: 
     res.set_content("{\"move\": \"" + move + "\"}", "text/plain");
