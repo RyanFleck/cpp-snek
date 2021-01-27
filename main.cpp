@@ -15,7 +15,7 @@ int main(void) {
     string head = "dead";
     string tail = "bolt";
     string author = "Ryan Fleck <dev@ryanfleck.ca>";
-    string color = "#FFFF00"; 
+    string color = "#888800"; 
     res.set_content("{\"apiversion\":\"1\", \"head\":\"" + head + "\", \"tail\":\"" + tail + "\", \"color\":\"" + color + "\", " + "\"author\":\"" + author + "\"}", "text/json");
   });
 
