@@ -35,13 +35,7 @@ void print_board(int** arr, int height, int width){
   cout << endl;
 }
 
-void initialize(int** arr, int height, int width){
-  for(int y=height-1; y>=0; y--){
-    for(int x=0; x<width; x++){
-      arr[y][x] = 0; 
-    }
-  }
-}
+
 
 void delete_frame(int** arr, int height, int width){
   for(int y=height-1; y>=0; y--){
@@ -55,7 +49,6 @@ void change_block(int** arr, int height, int width, int ix, int iy, int delta){
     for(int x=ix-1; x <= ix+1; x++){
       if(x >= 0 && x <= width -1){
         if(y >= 0 && y <= height -1){
-          cout << "Writing "<<delta<<" to "<<x<<","<<y<<"."<<endl;
           arr[y][x] += delta;
         }
       }
@@ -66,10 +59,44 @@ void change_block(int** arr, int height, int width, int ix, int iy, int delta){
 void change_cell(int** arr, int height, int width, int ix, int iy, int delta){
     if(ix >= 0 && ix <= width -1){
       if(iy >= 0 && iy <= height -1){
-          cout << "Writing "<<delta<<" to "<<ix<<","<<iy<<"."<<endl;
       arr[iy][ix] += delta;
     }
   }
+}
+
+/**
+ * Initialize game board. Edges are -1.
+ */
+void initialize(int** arr, int height, int width){
+
+  // Set borders to -1 and other areas to 0.
+  for(int y=height-1; y>=0; y--){
+    for(int x=0; x<width; x++){
+      if(y == 0 || x == 0 || x == width-1 || y == height-1){
+        arr[y][x] = -1; 
+      }else{
+        arr[y][x] = 0; 
+      }
+    }
+  }
+
+  // Set corners to lower.
+
+  // Bottom-left.
+  change_block(arr, height, width, 0, 0, -1);
+  change_cell(arr, height, width, 0, 0, -1);
+  
+  // Bottom-right.
+  change_block(arr, height, width, width-1, 0, -1);
+  change_cell(arr, height, width, width-1, 0, -1);
+  
+  // top-left.
+  change_block(arr, height, width, 0, height-1, -1);
+  change_cell(arr, height, width, 0, height-1, -1);
+  
+  // top-right.
+  change_block(arr, height, width, width-1, height-1, -1);
+  change_cell(arr, height, width, width-1, height-1, -1);
 }
 
 
@@ -131,8 +158,6 @@ int main(void) {
 
     // Set bottom-right and top-left corners.
     initialize(frame, height, width);
-    change_block(frame, height, width, 0, 0, -1);
-    change_cell(frame, height, width, 0, 0, -1);
 
     cout << "\n\nBoard at start of computation:" << endl;
     print_board(frame, height, width);
