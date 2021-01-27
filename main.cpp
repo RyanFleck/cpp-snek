@@ -2,6 +2,7 @@
 #include <cstdlib>
 #include <ctime>
 #include <vector>
+#include <time.h>
 #include "./json.hpp"
 #include "./http.h"
 
@@ -15,7 +16,7 @@ using namespace nlohmann;
  *       dev@ryanfleck.ca
  */
 
- const bool debug = 1;
+ const bool debug = false;
 
 
 void print_board(int** arr, int height, int width){
@@ -142,23 +143,17 @@ void initialize(int** arr, int height, int width){
 
 void addSnakes(int** arr, int h, int w, const json& snakes, const json& you){
   // Adds Snakes to JSON.
-  if(debug) cout << "\nAdding snakes..." << endl;
   auto id = you["id"];
   for(const auto &snake : snakes){
     const bool me = snake["id"] == id;
-    if(debug) cout << " - Adding snake " << snake["name"] << endl;
-    if(debug) cout << "Me: " << me << endl;
     json body = snake["body"];
-    if(debug) cout << "Getting head..." << endl;
     json head = snake["head"];
-    if(debug) cout << "Getting head position" << endl;
     const int hx = (int) head["x"];
     const int hy = (int) head["y"];
-    if(debug) cout << "Head is at: " << hx << "," << hy << endl;
 
     // Decrement head.
     change_cell(arr, h, w, hx, hy, -20);
-    if(!me) change_block(arr, h, w, hx, hy, -4);
+    if(!me) change_block(arr, h, w, hx, hy, -15);
 
     // Decrement body parts.
     for(const auto &segment : body){
@@ -166,8 +161,9 @@ void addSnakes(int** arr, int h, int w, const json& snakes, const json& you){
       const int sx = (int) segment["x"];
       const int sy = (int) segment["y"];
       if(debug) cout << "Segment is at: " << sx << "," << sy << endl;
-      change_cell(arr, h, w, sx, sy, -10);
-      change_block(arr, h, w, sx, sy, -2);
+      change_cell(arr, h, w, sx, sy, -50);
+      if(!me) change_block(arr, h, w, sx, sy, -10);
+      if(me) change_block(arr, h, w, sx, sy, -5);
     }
     if(debug) cout << endl;
   }
@@ -229,11 +225,11 @@ int main(void) {
    */
 
   svr.Post("/move", [](auto &req, auto &res){
+    clock_t startTime = clock();
     // https://github.com/nlohmann/json
     const json data = json::parse(req.body);
-    if(debug) cout << "\n\nPerforming Move Operation. Turn " << data["turn"] << "." << endl;
-    if(debug) cout << "ID: " << data["game"]["id"] << endl;
-    if(debug) cout << "\n" << data << endl;
+    cout << "\n\nPerforming Move Operation. Turn " << data["turn"] << "." << endl;
+    cout << "ID: " << data["game"]["id"] << endl;
     const json board = data["board"];
     const json snakes = board["snakes"];
     const json food = board["food"];
@@ -249,15 +245,22 @@ int main(void) {
 
     // Set bottom-right and top-left corners.
     initialize(frame, height, width);
+    
+    // if(debug) cout << "\n\nBoard at start of computation:" << endl;
+    // if(debug) print_board(frame, height, width);
 
     // Add Snakes
     addSnakes(frame, height, width, snakes, you);
+    
+    // if(debug) cout << "\n\nWith Snakes:" << endl;
+    // if(debug) print_board(frame, height, width);
+
 
     // Add Food
     addFood(frame, height, width, food);
-
-    if(debug) cout << "\n\nBoard at start of computation:" << endl;
-    print_board(frame, height, width);
+    
+    // if(debug) cout << "\n\nWith Food:" << endl;
+    if(debug) print_board(frame, height, width);
     
     // Pick the best move.
 
@@ -293,6 +296,8 @@ int main(void) {
 
     // Finally, reply with move: 
     res.set_content("{\"move\": \"" + move + "\"}", "text/plain");
+    auto responseTime = (clock() - startTime);
+    cout << "Calculation took " << responseTime << " cycles." << endl;
   });
 
   svr.listen("0.0.0.0", 8080);
